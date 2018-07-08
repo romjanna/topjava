@@ -6,15 +6,12 @@ import org.springframework.stereotype.Repository;
 import ru.javawebinar.topjava.model.User;
 import ru.javawebinar.topjava.repository.UserRepository;
 
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
-@Repository
+@Repository("userRepository")
 public class InMemoryUserRepositoryImpl implements UserRepository {
     private static final Logger log = LoggerFactory.getLogger(InMemoryUserRepositoryImpl.class);
 
@@ -24,8 +21,8 @@ public class InMemoryUserRepositoryImpl implements UserRepository {
     @Override
     public boolean delete(int id) {
         log.info("delete {}", id);
-        repository.entrySet().removeIf(u-> u.getKey().equals(id));
-        return false;
+        //repository.entrySet().removeIf(u-> u.getKey().equals(id));
+        return repository.remove(id) != null;
     }
 
     @Override
@@ -49,24 +46,21 @@ public class InMemoryUserRepositoryImpl implements UserRepository {
     public List<User> getAll() {
         log.info("getAll");
         List<User> users = (List<User>) repository.values();
-        Collections.sort(users, new Comparator<User>() {
-            @Override
-            public int compare(User o1, User o2) {
-                return o2.getName().compareTo(o1.getName());
+        users.sort((o1, o2) -> {
+            if (o2.getName().equals(o1.getName())) {
+                return o2.getId().compareTo(o1.getId());
             }
+            return o2.getName().compareTo(o1.getName());
         });
         return users;
     }
 
     @Override
     public User getByEmail(String email) {
-        List<User> users = repository.values().stream()
-                .filter(user -> user.getEmail().equals(email))
-                .collect(Collectors.toList());
         log.info("getByEmail {}", email);
-        if(!users.isEmpty()) {
-            return users.get(0);
-        }
-        return null;
+        return repository.values().stream()
+                .filter(user -> user.getEmail().equals(email))
+                .findFirst()
+                .orElse(null);
     }
 }

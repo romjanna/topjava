@@ -18,11 +18,15 @@ public class InMemoryMealRepositoryImpl implements MealRepository {
         MealsUtil.MEALS.forEach((meal) -> save(meal, DEFAULT_USER_ID));
     }
 
+    private void sortByDate(List<Meal> pmeals) {
+        pmeals.sort(Comparator.comparing(Meal::getDateTime).reversed());
+    }
+
     @Override
     public Meal save(Meal meal, int userId) {
         if (meal.isNew()) {
             meal.setId(counter.incrementAndGet());
-            if(prepository.isEmpty()) {
+            if (prepository.isEmpty()) {
                 prepository.put(userId, Collections.singletonList(meal));
             } else {
                 List<Meal> pmeals;
@@ -35,24 +39,26 @@ public class InMemoryMealRepositoryImpl implements MealRepository {
                 sortByDate(pmeals);
                 prepository.put(userId, pmeals);
             }
+            return meal;
         }
-        return meal;
-        // treat case: update, but absent in storage
-        //return repository.computeIfPresent(meal.getId(), (id, oldMeal) -> meal);
+        return updatedMeal(prepository.get(userId), meal, get(meal.getId(), userId));
     }
 
-    private void sortByDate(List<Meal> pmeals) {
-        pmeals.sort(Comparator.comparing(Meal::getDateTime).reversed());
+    private Meal updatedMeal(List<Meal> meals, Meal upMeal, Meal oldMeal) {
+        Collections.replaceAll(meals, oldMeal, upMeal);
+        return upMeal;
     }
 
     @Override
     public boolean delete(int id, int userId) {
-        return prepository.get(userId).removeIf(meal-> meal.getId().equals(id));
+        return prepository.get(userId).removeIf(meal -> meal.getId().equals(id));
     }
 
     @Override
     public Meal get(int id, int userId) {
-        return prepository.get(userId).get(id);
+        return prepository.get(userId).stream().filter(meal -> meal.getId().equals(id))
+                .findFirst()
+                .get();
     }
 
     @Override

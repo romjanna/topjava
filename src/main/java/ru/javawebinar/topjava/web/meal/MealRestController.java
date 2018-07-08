@@ -10,7 +10,7 @@ import ru.javawebinar.topjava.util.exception.NotFoundException;
 
 import java.util.List;
 
-import static ru.javawebinar.topjava.util.ValidationUtil.checkNew;
+import static ru.javawebinar.topjava.web.SecurityUtil.authUserId;
 
 @Controller
 public class MealRestController {
@@ -21,26 +21,26 @@ public class MealRestController {
 
     public Meal create(Meal meal) {
         log.info("create {}", meal);
-        checkNew(meal);
-        return service.create(meal);
+        //checkNew(meal);
+        return service.create(meal, authUserId());
     }
 
-    void delete(int id) throws NotFoundException {
+    public void delete(int id) throws NotFoundException {
         log.info("delete {]", id);
-        service.delete(id);
+        service.delete(id, authUserId());
     }
 
-    Meal get(int id) throws NotFoundException {
+    public Meal get(int id) throws NotFoundException {
         log.info("get {}", id);
-        return service.get(id);
+        return service.get(id, authUserId());
     }
 
-    void update(Meal meal) {
+    public void update(Meal meal) {
         log.info("update {}", meal);
     }
 
-    List<Meal> getAll() {
+    public List<Meal> getAll() {
         log.info("getAll");
-        return service.getAll();
+        return service.getAll(authUserId());
     }
 }

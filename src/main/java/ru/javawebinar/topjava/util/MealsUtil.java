@@ -23,9 +23,14 @@ public class MealsUtil {
             new Meal(LocalDateTime.of(2015, Month.MAY, 31, 20, 0), "Ужин", 510)
     );
 
+    public static final int DEFAULT_USER_ID = 1;
+
     public static final int DEFAULT_CALORIES_PER_DAY = 2000;
 
     public static List<MealWithExceed> getWithExceeded(Collection<Meal> meals, int caloriesPerDay) {
+        if(meals == null) {
+            return null;
+        }
         return getFilteredWithExceeded(meals, caloriesPerDay, meal -> true);
     }
 
