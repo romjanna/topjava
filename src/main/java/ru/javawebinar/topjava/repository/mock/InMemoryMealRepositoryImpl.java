@@ -8,62 +8,56 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static ru.javawebinar.topjava.web.SecurityUtil.authUserId;
+import static ru.javawebinar.topjava.util.MealsUtil.DEFAULT_USER_ID;
 
 public class InMemoryMealRepositoryImpl implements MealRepository {
-    private Map<Integer, Meal> repository = new ConcurrentHashMap<>();
-    private Map<Integer, List<Meal>> prepository = new HashMap();
+    private Map<Integer, List<Meal>> prepository = new ConcurrentHashMap<>();
     private AtomicInteger counter = new AtomicInteger(0);
 
     {
-        MealsUtil.MEALS.forEach(this::save);
+        MealsUtil.MEALS.forEach((meal) -> save(meal, DEFAULT_USER_ID));
     }
 
     @Override
-    public Meal save(Meal meal) {
+    public Meal save(Meal meal, int userId) {
         if (meal.isNew()) {
             meal.setId(counter.incrementAndGet());
-            repository.put(meal.getId(), meal);
             if(prepository.isEmpty()) {
-                prepository.put(authUserId(), Collections.singletonList(meal));
+                prepository.put(userId, Collections.singletonList(meal));
             } else {
-                List<Meal> pmeals = new ArrayList<Meal>(prepository.get(authUserId()));
+                List<Meal> pmeals;
+                if(prepository.get(userId) != null) {
+                    pmeals = new ArrayList<>(prepository.get(userId));
+                } else {
+                    pmeals = new ArrayList<>();
+                }
                 pmeals.add(meal);
                 sortByDate(pmeals);
-                prepository.put(authUserId(), pmeals);
+                prepository.put(userId, pmeals);
             }
-            return meal;
         }
+        return meal;
         // treat case: update, but absent in storage
-        return repository.computeIfPresent(meal.getId(), (id, oldMeal) -> meal);
+        //return repository.computeIfPresent(meal.getId(), (id, oldMeal) -> meal);
     }
 
     private void sortByDate(List<Meal> pmeals) {
-        Collections.sort(pmeals, new Comparator<Meal>() {
-            @Override
-            public int compare(Meal o1, Meal o2) {
-                return o1.getDateTime().compareTo(o2.getDateTime());
-            }
-        });
+        pmeals.sort(Comparator.comparing(Meal::getDateTime).reversed());
     }
 
     @Override
-    public boolean delete(int id) {
-        if(repository.containsKey(id)) {
-            repository.remove(id);
-            return true;
-        }
-        return false;
+    public boolean delete(int id, int userId) {
+        return prepository.get(userId).removeIf(meal-> meal.getId().equals(id));
     }
 
     @Override
-    public Meal get(int id) {
-        return repository.get(id);
+    public Meal get(int id, int userId) {
+        return prepository.get(userId).get(id);
     }
 
     @Override
-    public Collection<Meal> getAll() {
-        return repository.values();
+    public Collection<Meal> getAll(int userId) {
+        return prepository.get(userId);
     }
 }
 
