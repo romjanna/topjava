@@ -13,6 +13,7 @@ import static ru.javawebinar.topjava.util.ValidationUtil.checkNotFoundWithId;
 @Service
 public class MealServiceImpl implements MealService {
 
+    @Autowired
     private final MealRepository repository;
 
     @Autowired
